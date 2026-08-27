@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>University Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .section { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        input, select, button { padding: 8px; margin: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+<h1>🎓 University Management System</h1>
+
+<!-- Add Person -->
+<div class="section">
+    <h2>Add Person</h2>
+    <input id="name" placeholder="Name" />
+    <input id="studentId" placeholder="Student ID" />
+    <input id="location" placeholder="Location" />
+    <select id="universitySelect"></select>
+    <button onclick="addPerson()">Add Person</button>
+</div>
+
+<!-- View Persons -->
+<div class="section">
+    <h2>All Persons</h2>
+    <button onclick="loadPersons()">Refresh</button>
+    <table id="personTable">
+        <thead><tr><th>ID</th><th>Name</th><th>Student ID</th><th>Location</th><th>University</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Add University -->
+<div class="section">
+    <h2>Add University</h2>
+    <input id="uniName" placeholder="University Name" />
+    <input id="uniLocation" placeholder="Location" />
+    <button onclick="addUniversity()">Add University</button>
+</div>
+
+<!-- View Universities -->
+<div class="section">
+    <h2>All Universities</h2>
+    <button onclick="loadUniversities()">Refresh</button>
+    <table id="uniTable">
+        <thead><tr><th>ID</th><th>Name</th><th>Location</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api';
+
+    // Load universities into dropdown
+    async function loadUniversitiesForDropdown() {
+        const res = await fetch(`${API_URL}/universities`);
+        const universities = await res.json();
+        const select = document.getElementById('universitySelect');
+        select.innerHTML = '<option value="">Select University</option>';
+        universities.forEach(uni => {
+            const option = document.createElement('option');
+            option.value = uni.id;
+            option.textContent = uni.name;
+            select.appendChild(option);
+        });
+    }
+
+    // Add Person
+    async function addPerson() {
+        const name = document.getElementById('name').value;
+        const studentId = document.getElementById('studentId').value;
+        const location = document.getElementById('location').value;
+        const universityId = document.getElementById('universitySelect').value;
+
+        const person = {
+            name,
+            studentId,
+            location,
+            university: universityId ? { id: parseInt(universityId) } : null
+        };
+
+        await fetch(`${API_URL}/persons`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(person)
+        });
+
+        alert('Person added!');
+        loadPersons();
+    }
+
+    // Load Persons
+    async function loadPersons() {
+        const res = await fetch(`${API_URL}/persons`);
+        const persons = await res.json();
+        const tbody = document.querySelector('#personTable tbody');
+        tbody.innerHTML = '';
+        persons.forEach(p => {
+            const row = `<tr>
+                <td>${p.id}</td>
+                <td>${p.name}</td>
+                <td>${p.studentId}</td>
+                <td>${p.location}</td>
+                <td>${p.university ? p.university.name : 'N/A'}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Add University
+    async function addUniversity() {
+        const name = document.getElementById('uniName').value;
+        const location = document.getElementById('uniLocation').value;
+        await fetch(`${API_URL}/universities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, location })
+        });
+        alert('University added!');
+        loadUniversities();
+        loadUniversitiesForDropdown();
+    }
+
+    // Load Universities
+    async function loadUniversities() {
+        const res = await fetch(`${API_URL}/universities`);
+        const universities = await res.json();
+        const tbody = document.querySelector('#uniTable tbody');
+        tbody.innerHTML = '';
+        universities.forEach(u => {
+            const row = `<tr><td>${u.id}</td><td>${u.name}</td><td>${u.location}</td></tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Load everything on page load
+    loadPersons();
+    loadUniversities();
+    loadUniversitiesForDropdown();
+</script>
+
+</body>
+</html>
