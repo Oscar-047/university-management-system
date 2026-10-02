@@ -1,0 +1,57 @@
+# 1. Version of docker-compose format
+version: '3.8'
+
+# 2. List of services (containers)
+services:
+
+  # 3. PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: university_db
+    environment:
+      POSTGRES_DB: university_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - university-network
+
+  # 4. Backend (Spring Boot)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: university-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/university_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - university-network
+
+  # 5. Frontend (Nginx)
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: university-frontend
+    ports:
+      - "8081:80"
+    networks:
+      - university-network
+
+# 6. Volumes for persistent data
+volumes:
+  postgres_data:
+
+# 7. Networks for communication between containers
+networks:
+  university-network:
+    driver: bridge
